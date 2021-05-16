@@ -12,12 +12,12 @@ logging.basicConfig(level=logging.DEBUG)
 
 def main():
     # calendar = GoogleCalendar()
-    weather = OpenWeatherMap()
-    temperature = weather.get_temperature({"lat": "35.71", "lon": "139.81"})
+    # weather = OpenWeatherMap()
+    # info = weather.get({"lat": "35.71", "lon": "139.81"})
+    # data = {"temp": temperature}
 
     renderer = EpaperRenderer()
-    data = {"temp": temperature}
-    renderer.render(data)
+    renderer.render()
 
 
 try:

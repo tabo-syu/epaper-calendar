@@ -23,30 +23,77 @@ class EpaperRenderer:
     def __init__(self):
         self.epd = EPD()
 
-    def template(self, data):
+    def template(self):
         assets_dir = get_dirpath_project_root("assets")
-        font24 = ImageFont.truetype(os.path.join(assets_dir, "Font.ttc"), 24)
+        fonts = {
+            "default": os.path.join(assets_dir, "GLT-GonunneObsolete.otf"),
+            "hiragana_number": os.path.join(assets_dir, "GLT-GonunneSpurious.otf"),
+        }
 
         image = Image.new("1", (self.epd.width, self.epd.height), 255)
+        # image = Image.open(os.path.join(assets_dir, "sample.bmp"))
         draw = ImageDraw.Draw(image)
 
-        draw.text((10, 0), "hello world", font=font24, fill=0)
-        draw.text((10, 20), f'temperature: {data["temp"]}', font=font24, fill=0)
-        draw.text((150, 0), "微雪电子", font=font24, fill=0)
-        draw.line((20, 50, 70, 100), fill=0)
-        draw.line((70, 50, 20, 100), fill=0)
-        draw.rectangle((20, 50, 70, 100), outline=0)
-        draw.line((165, 50, 165, 100), fill=0)
-        draw.line((140, 75, 190, 75), fill=0)
-        draw.arc((140, 50, 190, 100), 0, 360, fill=0)
-        draw.rectangle((80, 50, 130, 100), fill=0)
-        draw.chord((200, 50, 250, 100), 0, 360, fill=0)
+        # title section
+        date_font = ImageFont.truetype(fonts["hiragana_number"], 80)
+        day_of_the_week_font = ImageFont.truetype(fonts["default"], 80)
+        draw.text((25, 0), "2021.05.05", font=date_font, fill=0)
+        draw.text((410, 5), "[土]", font=day_of_the_week_font, fill=0)
+        draw.line((25, 110, 775, 110), fill=0, width=3)
+
+        section_title_font = ImageFont.truetype(fonts["hiragana_number"], 56)
+        # weather section
+        subtitle_font = ImageFont.truetype(fonts["hiragana_number"], 32)
+        weather_font = ImageFont.truetype(fonts["default"], 104)
+        temperature_font = ImageFont.truetype(fonts["hiragana_number"], 24)
+        draw.text((25, 107), "てんき", font=section_title_font, fill=0)
+        for index in range(0, 2):
+            column_spacing = 230 * index
+            draw.text((28 + column_spacing, 179), "きょう", font=subtitle_font, fill=0)
+            draw.text((64 + column_spacing, 221), "晴", font=weather_font, fill=0)
+            draw.multiline_text(
+                (30 + column_spacing, 361),
+                "さいこう\nさいてい\nたいかん",
+                spacing=7,
+                font=temperature_font,
+                fill=0,
+            )
+            draw.multiline_text(
+                (121 + column_spacing, 361),
+                "26.5ど\n19.8ど\n24.5ど",
+                align="right",
+                spacing=7,
+                font=temperature_font,
+                fill=0,
+            )
+            draw.line(
+                (230 + column_spacing, 188, 230 + column_spacing, 456), fill=0, width=3
+            )
+
+        # plan section
+        plan_date_font = ImageFont.truetype(fonts["hiragana_number"], 22)
+        plan_name_font = ImageFont.truetype(fonts["default"], 32)
+        draw.text((485, 107), "よてい", font=section_title_font, fill=0)
+        for index in range(0, 5):
+            line_spacing = 56 * index
+            draw.text(
+                (485, 180 + line_spacing),
+                "05.16. 08.00-08.30",
+                font=plan_date_font,
+                fill=0,
+            )
+            draw.text(
+                (485, 197 + line_spacing),
+                "燃えるごみの日ああ",
+                font=plan_name_font,
+                fill=0,
+            )
 
         return image
 
-    def render(self, data):
+    def render(self):
         self.epd.init()
         self.epd.Clear()
-        image = self.template(data)
+        image = self.template()
         self.epd.display(self.epd.getbuffer(image))
         self.epd.sleep()
