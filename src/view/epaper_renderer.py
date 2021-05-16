@@ -23,7 +23,7 @@ class EpaperRenderer:
     def __init__(self):
         self.epd = EPD()
 
-    def template(self):
+    def template(self, data):
         assets_dir = get_dirpath_project_root("assets")
         fonts = {
             "default": os.path.join(assets_dir, "GLT-GonunneObsolete.otf"),
@@ -31,14 +31,15 @@ class EpaperRenderer:
         }
 
         image = Image.new("1", (self.epd.width, self.epd.height), 255)
-        # image = Image.open(os.path.join(assets_dir, "sample.bmp"))
         draw = ImageDraw.Draw(image)
 
         # title section
         date_font = ImageFont.truetype(fonts["hiragana_number"], 80)
         day_of_the_week_font = ImageFont.truetype(fonts["default"], 80)
-        draw.text((25, 0), "2021.05.05", font=date_font, fill=0)
-        draw.text((410, 5), "[土]", font=day_of_the_week_font, fill=0)
+        draw.text((25, 0), data["date"], font=date_font, fill=0)
+        draw.text(
+            (410, 5), f'[{data["day_of_week"]}]', font=day_of_the_week_font, fill=0
+        )
         draw.line((25, 110, 775, 110), fill=0, width=3)
 
         section_title_font = ImageFont.truetype(fonts["hiragana_number"], 56)
@@ -47,24 +48,37 @@ class EpaperRenderer:
         weather_font = ImageFont.truetype(fonts["default"], 104)
         temperature_font = ImageFont.truetype(fonts["hiragana_number"], 24)
         draw.text((25, 107), "てんき", font=section_title_font, fill=0)
-        for index in range(0, 2):
+        for index, forecast in enumerate(data["forecasts"]):
             column_spacing = 230 * index
-            draw.text((28 + column_spacing, 179), "きょう", font=subtitle_font, fill=0)
-            draw.text((64 + column_spacing, 221), "晴", font=weather_font, fill=0)
+            draw.text(
+                (28 + column_spacing, 179),
+                "きょう" if index == 0 else "あした",
+                font=subtitle_font,
+                fill=0,
+            )
+            draw.text(
+                (116 + column_spacing, 219),
+                forecast["weather"][0]["icon"],
+                font=weather_font,
+                fill=0,
+                align="center",
+                anchor="ma",
+            )
             draw.multiline_text(
-                (30 + column_spacing, 361),
+                (28 + column_spacing, 361),
                 "さいこう\nさいてい\nたいかん",
                 spacing=7,
                 font=temperature_font,
                 fill=0,
             )
             draw.multiline_text(
-                (121 + column_spacing, 361),
-                "26.5ど\n19.8ど\n24.5ど",
-                align="right",
+                (206 + column_spacing, 361),
+                f'{forecast["temp"]["max"]}ど\n{forecast["temp"]["min"]}ど\n{forecast["feels_like"]["day"]}ど',
                 spacing=7,
                 font=temperature_font,
                 fill=0,
+                align="right",
+                anchor="ra",
             )
             draw.line(
                 (230 + column_spacing, 188, 230 + column_spacing, 456), fill=0, width=3
@@ -74,26 +88,26 @@ class EpaperRenderer:
         plan_date_font = ImageFont.truetype(fonts["hiragana_number"], 22)
         plan_name_font = ImageFont.truetype(fonts["default"], 32)
         draw.text((485, 107), "よてい", font=section_title_font, fill=0)
-        for index in range(0, 5):
+        for index, event in enumerate(data["events"]):
             line_spacing = 56 * index
             draw.text(
                 (485, 180 + line_spacing),
-                "05.16. 08.00-08.30",
+                event["period"],
                 font=plan_date_font,
                 fill=0,
             )
             draw.text(
                 (485, 197 + line_spacing),
-                "燃えるごみの日ああ",
+                event["summary"],
                 font=plan_name_font,
                 fill=0,
             )
 
         return image
 
-    def render(self):
+    def render(self, data):
         self.epd.init()
         self.epd.Clear()
-        image = self.template()
+        image = self.template(data)
         self.epd.display(self.epd.getbuffer(image))
         self.epd.sleep()
